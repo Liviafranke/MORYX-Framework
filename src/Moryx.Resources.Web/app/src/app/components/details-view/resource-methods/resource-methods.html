@@ -1,10 +1,14 @@
 @if (methods()?.length) {
-  <mat-accordion class="methods method-headers-align">
+  <mat-accordion class="panel-accordion">
     @for (method of methods(); track method) {
       <mat-expansion-panel (opened)="onMethodSelected(method)">
-        <mat-expansion-panel-header>
-          <mat-panel-title>{{ method.displayName }}</mat-panel-title>
-          <mat-panel-description>{{ method.description }}</mat-panel-description>
+        <mat-expansion-panel-header collapsedHeight="56px" expandedHeight="56px">
+          <mat-panel-title>
+            <div class="panel-header">
+              <span class="panel-title">{{ method.displayName }}</span>
+              <span class="panel-description">{{ method.description }}</span>
+            </div>
+          </mat-panel-title>
         </mat-expansion-panel-header>
         @let result = methodResult();
         @if (method.name === selectedMethod()?.name) {

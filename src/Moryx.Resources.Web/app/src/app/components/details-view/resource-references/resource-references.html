@@ -1,6 +1,6 @@
 @if (referenceTypes()) {
   <mat-accordion
-    class="references"
+    class="panel-accordion"
     >
     @for (ref of referenceTypes(); track ref) {
       <mat-expansion-panel
@@ -15,11 +15,11 @@
               </mat-icon>
             </div>
             <div class="content-section">
-              <mat-panel-title class="resource-name">
-                {{ ref.displayName }}
+              <mat-panel-title class="panel-title">
+                {{ ref.displayName }}<span class="reference-targets">{{ getTargetNames(ref) }}</span>
               </mat-panel-title>
-              <mat-panel-description class="resource-meta">
-                {{ getMetaText(ref) }}
+              <mat-panel-description class="panel-description">
+                {{ ref.description }}
               </mat-panel-description>
             </div>
           </div>
