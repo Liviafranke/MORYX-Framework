@@ -6,7 +6,6 @@ using System.ComponentModel.DataAnnotations;
 using System.Runtime.Serialization;
 using Moryx.AbstractionLayer.Identity;
 using Moryx.AbstractionLayer.Resources;
-using Moryx.Material.Events;
 using Moryx.Material.States;
 using Moryx.Serialization;
 using Moryx.StateMachines;
@@ -63,6 +62,14 @@ public abstract class MaterialContainer : Resource, IMaterialContainer, IStateCo
     [Display(Name = "State", Description = "Current lifecycle state classification of the container.")]
     public StateClassification State => _state?.Classification ?? StateClassification.Uninitialized;
 
+    /// <summary>
+    /// Detailed lifecycle state data for the current <see cref="State"/>.
+    /// </summary>
+    [DataMember]
+    [EntrySerialize, ReadOnly(true)]
+    [Display(Name = "State Information", Description = "Information about the current state of the container.")]
+    public StateInformation? StateInformation { get; set; }
+
     /// <inheritdoc />
     public void UpdateMaterial(MaterialUpdate update)
     {
@@ -71,11 +78,13 @@ public abstract class MaterialContainer : Resource, IMaterialContainer, IStateCo
             return;
         }
 
-        var eventArgs = new MaterialUpdatedEventArgs(this) { Kind = update.Kind };
+        var eventArgs = new MaterialUpdatedEventArgs() { Kind = update.Kind };
+        // ToDo: Do we need an extra flag for unit? Is empty unit allowed?
         if (update.Kind.HasFlag(UpdateKind.MaterialType))
         {
             eventArgs.OldMaterial = Material;
             eventArgs.NewMaterial = Material = update.Material;
+            Unit = update.Unit;
         }
         // ToDo: Should a negative Quantity throw an invalid operation exception?
         // Should update.Quantity be prevented beforehand or interpreted here as a relative update?
@@ -93,6 +102,21 @@ public abstract class MaterialContainer : Resource, IMaterialContainer, IStateCo
         return update.Kind == UpdateKind.NoOperation ||
             update.Kind == UpdateKind.MaterialType && string.Equals(update.Material, Material, StringComparison.Ordinal) ||
             update.Kind == UpdateKind.FillingLevel && update.Quantity == Quantity;
+    }
+
+    /// <inheritdoc/>
+    public void TransitionTo(StateInformation stateInformation)
+    {
+        ArgumentNullException.ThrowIfNull(stateInformation);
+        if (_state == null)
+        {
+            throw new InvalidOperationException("The material container state machine is not initialized.");
+        }
+
+        var oldStateInformation = StateInformation;
+        _state.Advance(stateInformation);
+        StateChanged?.Invoke(this, new StateChangedEventArgs(oldStateInformation, stateInformation));
+        OnStateChanged();
     }
 
     /// <inheritdoc />
@@ -118,8 +142,6 @@ public abstract class MaterialContainer : Resource, IMaterialContainer, IStateCo
             return;
         }
 
-        // ToDo: Can we even publish the old information?
-        StateChanged?.Invoke(this, new StateChangedEventArgs(this, default, StateInformation!));
         OnStateChanged();
     }
 
@@ -186,12 +208,4 @@ public abstract class MaterialContainer : Resource, IMaterialContainer, IStateCo
         Quantity = quantity;
         Unit = unit;
     }
-
-    // ToDo: Should this be part of the interface? How do we match requests and announcements otherwise?
-    /// <summary>
-    /// Detailed lifecycle state data for the current <see cref="State"/>.
-    /// </summary>
-    [DataMember]
-    [EntrySerialize, ReadOnly(true)]
-    public StateInformation? StateInformation { get; set; }
 }

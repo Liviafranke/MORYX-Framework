@@ -32,7 +32,7 @@ internal sealed class MaterialContainerTests : TestBase
         // Arrange
         var hostId = await CreateContainerHostAsync();
         const string material = "Some Material";
-        const decimal quantity = 42m;
+        const double quantity = 42;
         const string unit = "Some Unit";
 
         // Act
@@ -65,7 +65,7 @@ internal sealed class MaterialContainerTests : TestBase
         {
             Id = "Some Id",
             Material = "Some Material",
-            RequestedQuantity = 42m,
+            RequestedQuantity = 42,
             Unit = "Some Unit",
             ExpectedArrival = DateTime.UtcNow,
         };
